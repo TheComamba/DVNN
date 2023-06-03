@@ -1,4 +1,5 @@
 use ndarray::{arr1, Array1};
+use neuralnet::Val;
 
 mod neuralnet;
 
@@ -26,13 +27,13 @@ fn main() {
     println!("Error: {}", error);
 }
 
-fn read_input(path: &str) -> Result<Vec<Array1<i16>>, std::io::Error> {
+fn read_input(path: &str) -> Result<Vec<Array1<Val>>, std::io::Error> {
     let file = std::fs::File::open(path)?;
     let decode =
         idx_decoder::IDXDecoder::<_, idx_decoder::types::U8, nalgebra::U3>::new(file).unwrap();
     let mut images = Vec::new();
     for val in decode {
-        images.push(arr1(&val.iter().map(|e| *e as i16).collect::<Vec<_>>()));
+        images.push(arr1(&val.iter().map(|e| *e as Val).collect::<Vec<_>>()));
         if images.len() % 1000 == 0 {
             println!("Read {} images.", images.len());
         }
@@ -40,10 +41,10 @@ fn read_input(path: &str) -> Result<Vec<Array1<i16>>, std::io::Error> {
     Ok(images)
 }
 
-fn read_output(path: &str) -> Result<Vec<i16>, std::io::Error> {
+fn read_output(path: &str) -> Result<Vec<Val>, std::io::Error> {
     let file = std::fs::File::open(path)?;
     let decode =
         idx_decoder::IDXDecoder::<_, idx_decoder::types::U8, nalgebra::U1>::new(file).unwrap();
-    let decode = decode.map(|e| e as i16).collect::<Vec<_>>();
+    let decode = decode.map(|e| e as Val).collect::<Vec<_>>();
     Ok(decode)
 }
