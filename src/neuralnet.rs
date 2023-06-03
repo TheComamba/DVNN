@@ -48,7 +48,8 @@ impl Neuralnet {
     const ERROR_THRESHOLD: i16 = 10;
 
     pub fn train(&mut self, dataset: &Vec<(Array1<i16>, i16)>) {
-        for _ in 0..Self::MAX_STEPS {
+        for i in 0..Self::MAX_STEPS {
+            println!("{}", i);
             let mut new_weights = Vec::new();
             for weight in self.weights.iter() {
                 let height = weight.shape()[0];
