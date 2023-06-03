@@ -1,73 +1,54 @@
-use ndarray::{Array, Array1, Array2, ShapeBuilder};
-use ndarray_rand::RandomExt;
-use rand::distributions::Uniform;
+use ndarray::{arr1, Array1};
+
+mod neuralnet;
 
 fn main() {
-    println!("Hello, world!");
+    let training_input = read_input("dataset/train-images.idx3-ubyte").unwrap();
+    let training_output = read_output("dataset/train-labels.idx1-ubyte").unwrap();
+    let training_dataset = training_input
+        .iter()
+        .zip(training_output.iter())
+        .map(|(input, output)| (input.clone(), *output))
+        .collect::<Vec<_>>();
+
+    let node_numbers = vec![training_input.len(), 16, 16, training_output.len()];
+    let mut net = neuralnet::Neuralnet::new(node_numbers);
+    net.train(&training_dataset);
+
+    let test_input = read_input("dataset/t10k-images.idx3-ubyte").unwrap();
+    let test_output = read_output("dataset/t10k-labels.idx1-ubyte").unwrap();
+    let test_dataset = test_input
+        .iter()
+        .zip(test_output.iter())
+        .map(|(input, output)| (input.clone(), *output))
+        .collect::<Vec<_>>();
+    let error = net.total_error(&test_dataset);
+    println!("Error: {}", error);
 }
 
-struct Neuralnet {
-    weights: Vec<Array2<i16>>,
+fn read_input(path: &str) -> Result<Vec<Array1<i16>>, std::io::Error> {
+    let file = std::fs::File::open(path)?;
+    let decode =
+        idx_decoder::IDXDecoder::<_, idx_decoder::types::I16, nalgebra::U1>::new(file).unwrap();
+    let mut input = Vec::new();
+    let mut image = Vec::new();
+    let mut size = 0;
+    for val in decode {
+        image.push(val);
+        size += 1;
+        if size == 28 * 28 {
+            input.push(arr1(&image));
+            image.clear();
+            size = 0;
+        }
+    }
+    Ok(input)
 }
 
-impl Neuralnet {
-    fn new(layer_sizes: Vec<usize>) -> Neuralnet {
-        let mut weights = Vec::new();
-        for i in 0..layer_sizes.len() - 1 {
-            let size = (layer_sizes[i], layer_sizes[i + 1]);
-            let layer_weights = Array2::<i16>::zeros(size.f());
-            weights.push(layer_weights);
-        }
-        Neuralnet {
-            weights: Vec::new(),
-        }
-    }
-
-    fn feedforward(&self, input: &Array1<i16>) -> Array1<i16> {
-        let mut output = input.clone();
-        for i in 0..self.weights.len() {
-            output = self.weights[i].dot(&output);
-            for j in 0..output.len() {
-                output[j] = output[j].signum();
-            }
-        }
-        output
-    }
-
-    fn total_error(&self, dataset: &Vec<(Array1<i16>, Array1<i16>)>) -> i16 {
-        let mut error = 0;
-        for i in 0..dataset.len() {
-            let input = &dataset[i].0;
-            let target = &dataset[i].1;
-            let output = self.feedforward(&input);
-            let diff = target - output;
-            error += diff.dot(&diff);
-        }
-        error
-    }
-
-    const EVOLUTION_SAMPLE_SIZE: usize = 8;
-    const MAX_CHANGE: i16 = 10;
-
-    pub fn train(&mut self, dataset: &Vec<(Array1<i16>, Array1<i16>)>) {
-        for i in 0..Self::EVOLUTION_SAMPLE_SIZE {
-            let mut new_weights = Vec::new();
-            for weight in self.weights.iter() {
-                let height = weight.shape()[0];
-                let width = weight.shape()[1];
-                let delta = Array::random(
-                    (height, width),
-                    Uniform::new(-Self::MAX_CHANGE, Self::MAX_CHANGE),
-                );
-                new_weights.push(weight + delta);
-            }
-            let new_net = Neuralnet {
-                weights: new_weights,
-            };
-            let error = new_net.total_error(dataset);
-            if error < self.total_error(dataset) {
-                self.weights = new_net.weights;
-            }
-        }
-    }
+fn read_output(path: &str) -> Result<Vec<i16>, std::io::Error> {
+    let file = std::fs::File::open(path)?;
+    let decode =
+        idx_decoder::IDXDecoder::<_, idx_decoder::types::I16, nalgebra::U1>::new(file).unwrap();
+    let decode = decode.collect::<Vec<_>>();
+    Ok(decode)
 }
