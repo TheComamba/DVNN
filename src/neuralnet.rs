@@ -70,13 +70,12 @@ impl Neuralnet {
         }
         error as f64 / dataset.len() as f64 / Self::PERCENT_SQUARED
     }
-
-    const MAX_STEPS: usize = 8000;
     const MAX_CHANGE: Val = 10;
     const ERROR_THRESHOLD: f64 = 0.05;
 
     pub fn train(&mut self, dataset: &Vec<(Array1<Val>, Val)>) {
-        for i in 0..Self::MAX_STEPS {
+        let mut i = 0;
+        loop {
             let mut new_weights = Vec::new();
             for weight in self.weights.iter() {
                 let height = weight.shape()[0];
@@ -100,6 +99,7 @@ impl Neuralnet {
                     break;
                 }
             }
+            i += 1;
         }
     }
 }

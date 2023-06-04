@@ -18,7 +18,7 @@ fn main() {
         .map(|(input, output)| (input.clone(), *output))
         .collect::<Vec<_>>();
 
-    let node_numbers = vec![NUM_OF_PIXELS, 3, NUM_OF_DIGITS];
+    let node_numbers = vec![NUM_OF_PIXELS, 16, 16, NUM_OF_DIGITS];
     let mut net = neuralnet::Neuralnet::new(node_numbers);
     net.train(&training_dataset);
 
