@@ -4,15 +4,18 @@ use neuralnet::Val;
 mod neuralnet;
 
 fn main() {
-    let training_input = read_input("dataset/train-images-idx3-ubyte").unwrap();
-    let training_output = read_output("dataset/train-labels-idx1-ubyte").unwrap();
+    // let training_input = read_input("dataset/train-images-idx3-ubyte").unwrap();
+    // let training_output = read_output("dataset/train-labels-idx1-ubyte").unwrap();
+    let training_input = read_input("dataset/t10k-images-idx3-ubyte").unwrap();
+    let training_output = read_output("dataset/t10k-labels-idx1-ubyte").unwrap();
+
     let training_dataset = training_input
         .iter()
         .zip(training_output.iter())
         .map(|(input, output)| (input.clone(), *output))
         .collect::<Vec<_>>();
 
-    let node_numbers = vec![training_input.len(), 16, 16, training_output.len()];
+    let node_numbers = vec![training_input.len(), 3, training_output.len()];
     let mut net = neuralnet::Neuralnet::new(node_numbers);
     net.train(&training_dataset);
 
