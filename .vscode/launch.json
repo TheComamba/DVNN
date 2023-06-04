@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'DVNN'",
+            "name": "Debug executable 'dvnn'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=DVNN",
-                    "--package=DVNN"
+                    "--bin=dvnn",
+                    "--package=dvnn"
                 ],
                 "filter": {
-                    "name": "DVNN",
+                    "name": "dvnn",
                     "kind": "bin"
                 }
             },
@@ -25,16 +25,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'DVNN'",
+            "name": "Debug unit tests in executable 'dvnn'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=DVNN",
-                    "--package=DVNN"
+                    "--bin=dvnn",
+                    "--package=dvnn"
                 ],
                 "filter": {
-                    "name": "DVNN",
+                    "name": "dvnn",
                     "kind": "bin"
                 }
             },

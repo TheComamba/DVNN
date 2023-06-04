@@ -3,6 +3,9 @@ use neuralnet::Val;
 
 mod neuralnet;
 
+const NUM_OF_PIXELS: usize = 28 * 28;
+const NUM_OF_DIGITS: usize = 10;
+
 fn main() {
     // let training_input = read_input("dataset/train-images-idx3-ubyte").unwrap();
     // let training_output = read_output("dataset/train-labels-idx1-ubyte").unwrap();
@@ -15,7 +18,7 @@ fn main() {
         .map(|(input, output)| (input.clone(), *output))
         .collect::<Vec<_>>();
 
-    let node_numbers = vec![training_input.len(), 3, training_output.len()];
+    let node_numbers = vec![NUM_OF_PIXELS, 3, NUM_OF_DIGITS];
     let mut net = neuralnet::Neuralnet::new(node_numbers);
     net.train(&training_dataset);
 

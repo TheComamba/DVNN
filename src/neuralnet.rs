@@ -1,4 +1,4 @@
-use ndarray::{Array, Array1, Array2, ShapeBuilder};
+use ndarray::{Array, Array1, Array2};
 use ndarray_rand::RandomExt;
 use rand::distributions::Uniform;
 
@@ -12,8 +12,8 @@ impl Neuralnet {
     pub(crate) fn new(layer_sizes: Vec<usize>) -> Neuralnet {
         let mut weights = Vec::new();
         for i in 0..layer_sizes.len() - 1 {
-            let size = (layer_sizes[i], layer_sizes[i + 1]);
-            let layer_weights = Array2::<Val>::zeros(size.f());
+            let size = (layer_sizes[i + 1], layer_sizes[i]);
+            let layer_weights = Array2::<Val>::zeros(size);
             weights.push(layer_weights);
         }
         Neuralnet { weights }
@@ -31,19 +31,18 @@ impl Neuralnet {
     }
 
     pub(crate) fn total_error(&self, dataset: &Vec<(Array1<Val>, Val)>) -> f64 {
-        let mut error = 0.0;
+        let mut error_count = 0;
         for i in 0..dataset.len() {
             let input = &dataset[i].0;
             let output = self.feedforward(&input);
-            let mut target = Array1::<Val>::zeros(output.len());
-            target[dataset[i].1 as usize] = 1;
-            println!("Target: {:?}", target.to_vec());
-            println!("Output: {:?}", output.to_vec());
-            let diff = target - output;
-            println!("Diff: {:?}", diff.to_vec());
-            error += (diff.dot(&diff) / dataset.len() as Val) as f64;
+            for j in 0..output.len() {
+                let target = if j == dataset[i].1 as usize { 1 } else { 0 };
+                if output[j] != target {
+                    error_count += 1;
+                }
+            }
         }
-        error
+        (error_count / 10) as f64 / dataset.len() as f64
     }
 
     const MAX_STEPS: usize = 8000;
