@@ -1,6 +1,6 @@
 use ndarray::{Array, Array1, Array2};
 use ndarray_rand::RandomExt;
-use rand::distributions::Uniform;
+use rand::{distributions::Uniform, prelude::Distribution};
 
 pub(crate) type Val = i32;
 
@@ -19,47 +19,70 @@ impl Neuralnet {
         Neuralnet { weights }
     }
 
+    fn make_step(vec: &mut Array1<Val>) {
+        for j in 0..vec.len() {
+            vec[j] = vec[j].signum();
+        }
+    }
+
+    fn normalise_to_percent(vec: &mut Array1<Val>) {
+        for j in 0..vec.len() {
+            if vec[j] < 0 {
+                vec[j] = 0;
+            }
+        }
+        let mut sum = 0;
+        for j in 0..vec.len() {
+            sum += vec[j];
+        }
+        if sum == 0 {
+            return;
+        }
+        for j in 0..vec.len() {
+            vec[j] = vec[j] * 100 / sum;
+        }
+    }
+
     fn feedforward(&self, input: &Array1<Val>) -> Array1<Val> {
         let mut output = input.clone();
         for i in 0..self.weights.len() {
             output = self.weights[i].dot(&output);
-            for j in 0..output.len() {
-                output[j] = output[j].signum();
+            if i != self.weights.len() - 1 {
+                Self::make_step(&mut output);
+            } else {
+                Self::normalise_to_percent(&mut output);
             }
         }
         output
     }
 
+    const PERCENT_SQUARED: f64 = (100 * 100) as f64;
+
     pub(crate) fn total_error(&self, dataset: &Vec<(Array1<Val>, Val)>) -> f64 {
-        let mut error_count = 0;
+        let mut error = 0.0;
         for i in 0..dataset.len() {
             let input = &dataset[i].0;
             let output = self.feedforward(&input);
             for j in 0..output.len() {
-                let target = if j == dataset[i].1 as usize { 1 } else { 0 };
-                if output[j] != target {
-                    error_count += 1;
-                }
+                let target = if j == dataset[i].1 as usize { 100 } else { 0 };
+                error += (output[j] - target).pow(2) as f64;
             }
         }
-        (error_count / 10) as f64 / dataset.len() as f64
+        error as f64 / dataset.len() as f64 / Self::PERCENT_SQUARED
     }
 
     const MAX_STEPS: usize = 8000;
     const MAX_CHANGE: Val = 10;
-    const ERROR_THRESHOLD: f64 = 10.0;
+    const ERROR_THRESHOLD: f64 = 0.05;
 
     pub fn train(&mut self, dataset: &Vec<(Array1<Val>, Val)>) {
         for i in 0..Self::MAX_STEPS {
-            println!("Training step {}", i);
             let mut new_weights = Vec::new();
             for weight in self.weights.iter() {
                 let height = weight.shape()[0];
                 let width = weight.shape()[1];
-                let delta = Array::random(
-                    (height, width),
-                    Uniform::new(-Self::MAX_CHANGE, Self::MAX_CHANGE),
-                );
+                let change_dist = Uniform::new(1, Self::MAX_CHANGE).sample(&mut rand::thread_rng());
+                let delta = Array::random((height, width), Uniform::new(-change_dist, change_dist));
                 new_weights.push(weight + delta);
             }
             let new_net = Neuralnet {
@@ -67,8 +90,11 @@ impl Neuralnet {
             };
             let current_error = self.total_error(dataset);
             let new_error = new_net.total_error(dataset);
-            println!("CurrentError: {}, Newerror: {}", current_error, new_error);
             if new_error < current_error {
+                println!(
+                    "Step {}: FormerError = {}, Newerror = {}",
+                    i, current_error, new_error
+                );
                 self.weights = new_net.weights;
                 if new_error < Self::ERROR_THRESHOLD {
                     break;

@@ -7,10 +7,10 @@ const NUM_OF_PIXELS: usize = 28 * 28;
 const NUM_OF_DIGITS: usize = 10;
 
 fn main() {
-    // let training_input = read_input("dataset/train-images-idx3-ubyte").unwrap();
-    // let training_output = read_output("dataset/train-labels-idx1-ubyte").unwrap();
-    let training_input = read_input("dataset/t10k-images-idx3-ubyte").unwrap();
-    let training_output = read_output("dataset/t10k-labels-idx1-ubyte").unwrap();
+    let training_input = read_input("dataset/train-images-idx3-ubyte").unwrap();
+    let training_output = read_output("dataset/train-labels-idx1-ubyte").unwrap();
+    // let training_input = read_input("dataset/t10k-images-idx3-ubyte").unwrap();
+    // let training_output = read_output("dataset/t10k-labels-idx1-ubyte").unwrap();
 
     let training_dataset = training_input
         .iter()
