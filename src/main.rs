@@ -1,12 +1,19 @@
+use gui::Gui;
+use iced::{Sandbox, Settings};
 use ndarray::{arr1, Array1};
 use neuralnet::Val;
 
+mod gui;
 mod neuralnet;
 
 const NUM_OF_PIXELS: usize = 28 * 28;
 const NUM_OF_DIGITS: usize = 10;
 
-fn main() {
+fn main() -> iced::Result {
+    Gui::run(Settings::default())
+}
+
+fn load_and_train() {
     let training_input = read_input("dataset/train-images-idx3-ubyte").unwrap();
     let training_output = read_output("dataset/train-labels-idx1-ubyte").unwrap();
     // let training_input = read_input("dataset/t10k-images-idx3-ubyte").unwrap();
