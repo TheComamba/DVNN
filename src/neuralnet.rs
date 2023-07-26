@@ -56,9 +56,8 @@ impl Neuralnet {
         output
     }
 
-    const PERCENT_SQUARED: f64 = (100 * 100) as f64;
-
     pub(crate) fn total_error(&self, dataset: &Vec<(Array1<Val>, Val)>) -> f64 {
+        const PERCENT_SQUARED: f64 = (100 * 100) as f64;
         let mut error = 0.0;
         for i in 0..dataset.len() {
             let input = &dataset[i].0;
@@ -68,34 +67,52 @@ impl Neuralnet {
                 error += (output[j] - target).pow(2) as f64;
             }
         }
-        error as f64 / dataset.len() as f64 / Self::PERCENT_SQUARED
+        error as f64 / dataset.len() as f64 / PERCENT_SQUARED
     }
-    const MAX_CHANGE: Val = 10;
-    const ERROR_THRESHOLD: f64 = 0.05;
+
+    fn random_subset(dataset: &Vec<(Array1<Val>, Val)>) -> Vec<(Array1<Val>, Val)> {
+        const SUBSET_SIZE: usize = 100;
+        let mut indices = Vec::new();
+        for _ in 0..SUBSET_SIZE {
+            indices.push(Uniform::new(0, dataset.len()).sample(&mut rand::thread_rng()));
+        }
+        indices
+            .iter()
+            .map(|i| dataset[*i].clone())
+            .collect::<Vec<_>>()
+    }
+
+    fn randomly_mutated_weights(&self) -> Vec<Array2<Val>> {
+        const MAX_CHANGE: Val = 10;
+        let mut new_weights = Vec::new();
+        for weight in self.weights.iter() {
+            let height = weight.shape()[0];
+            let width = weight.shape()[1];
+            let change_dist = Uniform::new(1, MAX_CHANGE).sample(&mut rand::thread_rng());
+            let delta = Array::random((height, width), Uniform::new(-change_dist, change_dist));
+            new_weights.push(weight + delta);
+        }
+        new_weights
+    }
 
     pub fn train(&mut self, dataset: &Vec<(Array1<Val>, Val)>) {
+        const ERROR_THRESHOLD: f64 = 0.05;
         let mut i = 0;
         loop {
-            let mut new_weights = Vec::new();
-            for weight in self.weights.iter() {
-                let height = weight.shape()[0];
-                let width = weight.shape()[1];
-                let change_dist = Uniform::new(1, Self::MAX_CHANGE).sample(&mut rand::thread_rng());
-                let delta = Array::random((height, width), Uniform::new(-change_dist, change_dist));
-                new_weights.push(weight + delta);
-            }
+            let dataset = Self::random_subset(&dataset);
+
             let new_net = Neuralnet {
-                weights: new_weights,
+                weights: self.randomly_mutated_weights(),
             };
-            let current_error = self.total_error(dataset);
-            let new_error = new_net.total_error(dataset);
+            let current_error = self.total_error(&dataset);
+            let new_error = new_net.total_error(&dataset);
             if new_error < current_error {
                 println!(
                     "Step {}: FormerError = {}, Newerror = {}",
                     i, current_error, new_error
                 );
                 self.weights = new_net.weights;
-                if new_error < Self::ERROR_THRESHOLD {
+                if new_error < ERROR_THRESHOLD {
                     break;
                 }
             }
